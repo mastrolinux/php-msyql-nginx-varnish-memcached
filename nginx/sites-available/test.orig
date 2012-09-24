@@ -1,0 +1,64 @@
+upstream phpfpm{
+        server 127.0.0.1:9000;
+}
+
+upstream varnish{
+	server 127.0.0.1:6081;
+}
+
+server {
+    listen       80;
+    server_name  www.test.com;
+
+    location / {
+        proxy_pass http://varnish;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#        proxy_set_header HTTPS "";
+#        proxy_hide_header X-Varnish;
+#        proxy_hide_header Via;
+    }
+}
+
+server {
+	listen 8080;
+	server_name www.test.com;
+	#server_name _;
+	root /var/www/d7.avivaitalia/;
+        proxy_set_header Host $host;
+        client_body_timeout 300;
+        client_header_timeout 300;
+
+#	proxy_set_header X-Real-IP $remote_addr;
+#        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#        proxy_pass_request_headers on;
+	proxy_read_timeout 120;
+	
+	location ~* \.(jpg|jpeg|gif|png|css|js|ico|xml)$ {
+    		access_log        off;
+    		log_not_found     off;
+    		expires           7d;
+	}
+
+	access_log /var/log/nginx/test.com-access.log;
+	error_log /var/log/nginx/test.com-error.log;
+	index index.php index.tml index.htm;
+	
+	location / {
+		#try_files     $uri $uri/ $uri/index.php /index.php?q=$uri;
+		rewrite ^/(.*)$ /index.php?q=$1 last;
+	}
+	location ~ \.php$ {
+		try_files $uri =404;
+		fastcgi_index index.php;
+		fastcgi_pass	phpfpm;
+		include         fastcgi_params;
+    		fastcgi_param   SCRIPT_FILENAME    $document_root$fastcgi_script_name;
+    		fastcgi_param   SCRIPT_NAME        $fastcgi_script_name;
+	}
+
+}
+
+
