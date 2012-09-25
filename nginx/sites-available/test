@@ -34,7 +34,7 @@ server {
 	listen 8080;
 	server_name www.test.com;
 	#server_name _;
-	root /srv/sys01-data01/www/d7.avivaitalia/;
+	root /srv/sys01-data01/www/test/;
         proxy_set_header Host $host;
         client_body_timeout 300;
         client_header_timeout 300;
